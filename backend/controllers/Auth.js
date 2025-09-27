@@ -15,7 +15,7 @@ exports.sendOtpSignup = async (req,res) => {
     try{
         const {email} = req.body;
         console.log('email -> ', email);
-        checkUserPresent = await User.findOne({email});
+        const checkUserPresent = await User.findOne({email});
 
         // user not present
         // if(checkUserPresent){
@@ -86,130 +86,228 @@ exports.sendOtpSignup = async (req,res) => {
 };
 
 // SignUp 
-exports.signUp = async(req,res) => {
-    try{
-        // fetch data from req ki body
-        const {
-            firstName,
-            lastName,
-            email,
-            password,
-            confirmPassword,
-            accountType,
-            otp,
+// exports.signUp = async(req,res) => {
+//     try{
+//         // fetch data from req ki body
+//         const {
+//             firstName,
+//             lastName,
+//             email,
+//             password,
+//             confirmPassword,
+//             accountType,
+//             otp,
             
-        } = req.body;
+//         } = req.body;
 
-        console.log(firstName,
-            lastName,
-            email,
-            password,
-            confirmPassword,
-            accountType,
-            otp)
+//         console.log(firstName,
+//             lastName,
+//             email,
+//             password,
+//             confirmPassword,
+//             accountType,
+//             otp)
 
-        // validate data
-        // 1) all parameters are required
-        if(!firstName || !lastName || !email || !password || !confirmPassword || !otp){
-            return res.status(403).json({
-                success:false,
-                message:"All filled are required",
-            })
-        }
+//         // validate data
+//         // 1) all parameters are required
+//         if(!firstName || !lastName || !email || !password || !confirmPassword){
+//             return res.status(403).json({
+//                 success:false,
+//                 message:"all filled are required",
+//             })
+//         }
 
-        // 2) match password and confirm password
-        if(password!== confirmPassword){
-            return res.status(400).json({
-                success:false,
-                message:`Password and confirm password does not match, please check again`
-            });
-        }
+//         // 2) match password and confirm password
+//         if(password!== confirmPassword){
+//             return res.status(400).json({
+//                 success:false,
+//                 message:`Password and confirm password does not match, please check again`
+//             });
+//         }
 
-        // check user already exist or not
-        const existingUser = await User.findOne({email});
-        if(existingUser){
-            return res.status(400).json({
-                success:false,
-                message:`user already registered`
-            })
-        }
+//         // check user already exist or not
+//         const existingUser = await User.findOne({email});
+//         if(existingUser){
+//             return res.status(400).json({
+//                 success:false,
+//                 message:`user already registered`
+//             })
+//         }
 
-        // check otp
-        const recentOtp = await OTP.findOne({ email: email }).sort({ createdAt: -1 });;
-        console.log("recent otp -> ", recentOtp);
-        // validation of otp
-        if(otp.length != 6){
-            return res.status(400).json({
-                success:false,
-                message:`please fill the whole otp`
-            });
-        }
-        else if(otp !== recentOtp.otp){
-            return res.status(400).json({
-                success:false,
-                message:`Otp does not match`
-            });
-        }
+//         // check otp
+//         const recentOtp = await OTP.findOne({ email: email }).sort({ createdAt: -1 });;
+//         console.log("recent otp -> ", recentOtp);
+//         // validation of otp
+//         if(otp.length != 6){
+//             return res.status(400).json({
+//                 success:false,
+//                 message:`please fill the whole otp`
+//             });
+//         }
+//         else if(otp !== recentOtp.otp){
+//             console.log("OTP => ", otp);
+//             console.log("Actual OTP => ", recentOtp.otp);
+//             return res.status(400).json({
+//                 success:false,
+//                 message:`Otp does not match`
+//             });
+//         }
 
-        // hash password
-        const hashedPassword = await bcrypt.hash(password,10);
+//         // hash password
+//         const hashedPassword = await bcrypt.hash(password,10);
 
-        // entry  into database
+//         // entry  into database
 
-        const profileDetails = await Profile.create({
-            gender:null,
-            dateOfBirth:null,
-            about:null,
-            contactNumber:null,
-        });
+//         const profileDetails = await Profile.create({
+//             gender:null,
+//             dateOfBirth:null,
+//             about:null,
+//             contactNumber:null,
+//         });
 
         
+
+//         const user = await User.create({
+//             firstName,
+//             lastName,
+//             email,
+//             password:hashedPassword,
+//             accountType,
+//             additionalDetails:profileDetails._id,
+
+//             images:`https://api.dicebear.com/9.x/initials/svg?seed=${firstName} ${lastName}`,
+//         })
+
+//         const payload = {
+//             email:user.email,
+//             id: user.id,
+//             accountType : user.accountType
+//         }
+
+//         const token = jwt.sign(payload, process.env.JWT_SECRET, {
+//             expiresIn:'2h'
+//         });
+
+//         user.token = token;
+//         user.password = undefined;
+
+//         const options = {
+//             expiresIn: new Date(Date.now()+3*24*60*60*1000),
+//             httpOnly:true,
+//         }
+
+//         res.cookie('token', token, options).status(200).json({
+//             success:true,
+//             user,
+//             token,
+//             message:'User Registered successfully',
+//         })
+
+//     }
+//     catch(error){
+//         console.log(error);
+//         return res.status(500).json({
+//             success:false,
+//             message:`user cannot be registered, please try after some time`,
+//         });
+//     }
+// };
+
+exports.signUp = async (req, res) => {
+    try {
+        // Fetch data from req body
+        const { firstName, lastName, email, password, confirmPassword, accountType, otp } = req.body;
+
+        // Validate fields
+        if (!firstName || !lastName || !email || !password || !confirmPassword) {
+            return res.status(403).json({
+                success: false,
+                message: "All fields are required",
+            });
+        }
+
+        if(password.length < 6){
+            return res.status(400).json({
+                success:false,
+                message:"password must have length more than 6"
+            })
+        }
+
+        // Match passwords
+        if (password !== confirmPassword) {
+            return res.status(400).json({
+                success: false,
+                message: "Passwords do not match",
+            });
+        }
+
+        // Check if the user already exists
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({
+                success: false,
+                message: "User already registered",
+            });
+        }
+
+        // Check OTP
+        const recentOtp = await OTP.findOne({ email: email }).sort({ createdAt: -1 });
+        if (!recentOtp) {
+            return res.status(400).json({
+                success: false,
+                message: "OTP expired or not found",
+            });
+        }
+        if (otp.length !== 6) {
+            return res.status(400).json({
+                success: false,
+                message: "Please fill the whole OTP",
+            });
+        }
+        if (otp !== recentOtp.otp) {
+            return res.status(400).json({
+                success: false,
+                message: "OTP does not match",
+            });
+        }
+
+        // Proceed with hashing password and saving user
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const profileDetails = await Profile.create({ gender: null, dateOfBirth: null, about: null, contactNumber: null });
 
         const user = await User.create({
             firstName,
             lastName,
             email,
-            password:hashedPassword,
+            password: hashedPassword,
             accountType,
-            additionalDetails:profileDetails._id,
-
-            images:`https://api.dicebear.com/9.x/initials/svg?seed=${firstName} ${lastName}`,
-        })
-
-        const payload = {
-            email:user.email,
-            id: user.id,
-            accountType : user.accountType
-        }
-
-        const token = jwt.sign(payload, process.env.JWT_SECRET, {
-            expiresIn:'2h'
+            additionalDetails: profileDetails._id,
+            images: `https://api.dicebear.com/9.x/initials/svg?seed=${firstName} ${lastName}`,
         });
+
+        const payload = { email: user.email, id: user.id, accountType: user.accountType };
+        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '2h' });
 
         user.token = token;
         user.password = undefined;
 
-        const options = {
-            expiresIn: new Date(Date.now()+3*24*60*60*1000),
-            httpOnly:true,
-        }
-
+        const options = { expires: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), httpOnly: true };
         res.cookie('token', token, options).status(200).json({
-            success:true,
+            success: true,
             user,
             token,
-            message:'User Registered successfully',
-        })
-
-    }
-    catch(error){
+            message: "User registered successfully",
+        });
+    } catch (error) {
         console.log(error);
         return res.status(500).json({
-            success:false,
-            message:`user cannot be registered, please try after some time`,
+            success: false,
+            message: "User cannot be registered. Please try again later",
         });
     }
 };
+
+
 
 // login
 exports.login = async (req,res) => {
@@ -250,12 +348,12 @@ exports.login = async (req,res) => {
                 expiresIn: new Date(Date.now()+3*24*60*60*1000),
                 httpOnly:true,
             }
-
+            console.log("Login controller executed successfully")
             res.cookie('token', token, options).status(200).json({
                 success:true,
                 user,
                 token,
-                message:'Login successfully',
+                message:'Login successfully from backend',
             })
             
         }
@@ -274,3 +372,20 @@ exports.login = async (req,res) => {
         })
     }
 };
+
+exports.logout = async (req,res) => {
+    try{
+        res.cookie("jwt", "", {maxAge:0});
+        res.status(200).json({
+            success:true,
+            message:'logout successfully',
+        })
+    }
+    catch(error){
+        console.log(error);
+        return res.status(500).json({
+            success:false,
+            message:'internal server error in logout auth controller'
+        })
+    }
+}

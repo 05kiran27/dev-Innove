@@ -1,60 +1,57 @@
+
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-
 require('dotenv').config();
 
-exports.auth = async(req,res, next) => {
-    try{
-        // extract token
-        const token = req.cookies.token || res.body.token || req.header("Authorisation").replace("Bearer ","");
-
-        // if token missing then return response
-        if(!token){
-            return res.status(404).json({
-                success:false,
-                message:"token is missing, please login",
+exports.auth = async (req, res, next) => {
+    try {
+        // extract token from cookies, body, or header
+        const token = req.cookies.token || req.body.token || req.header("Authorization")?.replace("Bearer ", "");
+        
+        // if token is missing
+        if (!token) {
+            return res.status(401).json({
+                success: false,
+                message: "Token is missing, please log in",
             });
         }
 
         // verify the token
-        try{
+        try {
             const decode = jwt.verify(token, process.env.JWT_SECRET);
-            console.log("decode -> ", decode);
-            req.user = decode;
-        }
-        catch(err){
+            req.user = decode;  // attach the decoded user info to req
+        } catch (err) {
             return res.status(401).json({
-                success:false,
-                message:"token is invalid, please log in",
+                success: false,
+                message: "Token is invalid, please log in again",
             });
         }
-        console.log("auth middleware executed successfully")
+
+        // console.log("auth middleware executed successfully")
+
         next();
-    }
-    catch(error){
+    } catch (error) {
         return res.status(500).json({
-            success:false,
-            message:"Error in middleware auth while authentication, please log in again"
-        })
+            success: false,
+            message: "Error in auth middleware, please log in again",
+        });
     }
 };
 
 // isAdmin
 exports.isAdmin = async (req, res, next) => {
-    try{
-        if(req.user.accountType !== "Admin"){
+    try {
+        if (req.user.accountType !== "Admin") {
             return res.status(401).json({
-                success:false,
-                message:"This is the protected route for Admin only"
-            })
+                success: false,
+                message: "Access denied. Admins only",
+            });
         }
-        console.log('isAdmin executed successfully');
         next();
-    }
-    catch(error){
+    } catch (error) {
         return res.status(500).json({
-            success:false,
-            message:"user role cannot be varified, please try again",
+            success: false,
+            message: "Error verifying user role, please try again",
         });
     }
-}
+};

@@ -88,7 +88,7 @@ exports.createPost = async (req,res) => {
 // update post
 exports.getPostDetails = async (req,res) => {
     try{
-        const {postId} = req.body;
+        const postId = req.params.postId;
 
         // validation
         if(!postId){
@@ -272,5 +272,34 @@ exports.deletePost = async (req,res) => {
             success:false,
             message:"error in deleting post, please try after some time",
         });
+    }
+}
+
+exports.getUserPost = async (req,res) => {
+    
+    try{
+        const { userId } = req.params;
+        const user = User.findById({userId});
+
+        if(!user){
+            return res.status(404).json({
+                success:false,
+                message:"user not found while getting the all post of the user"
+            })
+        }
+
+        const post = user.populate('post').exec();
+
+        return res.status(200).json({
+            success:true,
+            message:"all post of the user fetch successfully ",
+            post
+        })
+    }catch(error){
+        console.log(error);
+        return res.status(500).json({
+            success:false,
+            message:`Internal server Error in getUser post`,
+        })
     }
 }

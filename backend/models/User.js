@@ -41,6 +41,42 @@ const userSchema = new mongoose.Schema({
         ref:"Post"
     }],
 
-});
+    connection:[{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:"Connections"
+    }],
+
+    pendingConnections: [{ 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'User' 
+    }],
+
+    following: [{ 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'User' 
+    }],
+
+    followers: [{ 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'User' 
+    }],
+
+    conversationRoom:[
+        {
+            type:mongoose.Schema.Types.ObjectId,
+            ref:"Conversation"
+        }
+    ],
+
+    notification:[
+        {
+            type:mongoose.Schema.Types.ObjectId,
+            ref:'Notification'
+        }
+    ]
+    
+},
+{timestamps:true}
+);
 
 module.exports = mongoose.model("User", userSchema);
